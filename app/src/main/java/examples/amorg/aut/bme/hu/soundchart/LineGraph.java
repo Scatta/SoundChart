@@ -19,23 +19,38 @@ public class LineGraph {
     private GraphicalView view;
 
     private TimeSeries dataset = new TimeSeries("SoundWave");
+    private TimeSeries dataset2 = new TimeSeries("Referece");
     private XYMultipleSeriesDataset mDataset = new XYMultipleSeriesDataset();
 
     private XYSeriesRenderer renderer = new XYSeriesRenderer();
+    private XYSeriesRenderer renderer2 = new XYSeriesRenderer();
     private XYMultipleSeriesRenderer mRenderer = new XYMultipleSeriesRenderer();
+
 
     public LineGraph()
     {
         mDataset.addSeries(dataset);
+        mDataset.addSeries(dataset2);
 
-        renderer.setColor(Color.BLACK);
+        renderer.setColor(Color.WHITE);
+        renderer.setChartValuesTextSize(25);
 
-        mRenderer.setZoomButtonsVisible(true);
-        mRenderer.setXTitle("Time");
-        mRenderer.setYTitle("Amplitude");
+        renderer2.setColor(Color.GREEN);
+        renderer2.setDisplayChartValues(false);
+
+        mRenderer.setApplyBackgroundColor(true);
+        mRenderer.setBackgroundColor(Color.BLACK);
+        mRenderer.setMarginsColor(Color.BLACK);
+
+        mRenderer.setXTitle("Frequency [Hz]");
+        mRenderer.setYTitle("Magnitude");
+
+        mRenderer.setLabelsTextSize(15);
+        mRenderer.setXLabels(10);
 
         mRenderer.addSeriesRenderer(renderer);
-    }
+        mRenderer.addSeriesRenderer(renderer2);
+    };
 
     public GraphicalView getView(Context context)
     {
@@ -43,19 +58,14 @@ public class LineGraph {
         return view;
     }
 
-    public void addNewPoints(double x, int y)
+    public void addNewPoints(double x, double y)
     {
         dataset.add(x, y);
     }
 
-    public void reset(){
-        mDataset.clear();
-        mDataset.addSeries(dataset);
-    }
-
-    public void setSeries(XYSeries n){
-        mDataset.clear();
-        mDataset.addSeries(n);
+    public void addNewPoints_line2(double x, double y)
+    {
+        dataset2.add(x, y);
     }
 
 }
