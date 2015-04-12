@@ -1,5 +1,6 @@
 package examples.amorg.aut.bme.hu.soundchart;
 
+import android.content.Intent;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -22,8 +23,8 @@ public class MainActivity extends ActionBarActivity {
     AudioRecord recorder = null;
     private static int audioEncoding = 2;
     private static int channelConfiguration = 16;
-    static byte[] buffer;
-    static byte[] bufferHold;
+    private static byte[] buffer;
+    private static byte[] bufferHold;
     private LinearLayout chartContainer;
 
     private FFT fourier;
@@ -35,7 +36,11 @@ public class MainActivity extends ActionBarActivity {
     private double maxHold;
     private double speed;
 
-    TextView tvText;
+    private double[] recordBuffer;
+    private int counter;
+    private boolean measure;
+
+    private TextView tvText;
 
     enum mEnum {Start,Stop};
     private mEnum btnStartStop;
@@ -47,6 +52,10 @@ public class MainActivity extends ActionBarActivity {
             fourier = new FFT();
             bufferHold = null;
             spectrumHold = null;
+            recordBuffer = new double[512];
+            counter = 0;
+            measure = false;
+
 
             while (readEnabled) {
 
@@ -69,6 +78,13 @@ public class MainActivity extends ActionBarActivity {
                     }
                 }
 
+                if(measure){
+                    recordBuffer[counter] = fourier.findMax(spectrum)*22050/fourier.getFftSize();
+                    if(counter != 511){
+                        counter++;
+                    }
+                }
+
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -79,13 +95,17 @@ public class MainActivity extends ActionBarActivity {
                         max=fourier.findMax(spectrum)*22050/fourier.getFftSize();
                         tvText.setText("Domináns frekvencia: " + ""+max+" Hz\n" +
                                        "Referencia frekvencia: 0.0 Hz\n" +
-                                       "Sebesség: 0 m/s");
+                                       "Sebesség: 0 km/h");
                         if(spectrumHold != null) {
                             maxHold = fourier.findMax(spectrumHold)*22050/fourier.getFftSize();
-                            speed = 299792458*((max/maxHold)-1);
+                            //line.setMin(maxHold);
+                            //line.setMax(maxHold);
+                            speed = 344*((max/maxHold)-1);
+                            speed = speed * 3.6 ;
+                            speed = Math.round(speed*100.0)/100.0;
                             tvText.setText("Domináns frekvencia: " + ""+max+" Hz\n" +
                                            "Referencia frekvencia: " + ""+maxHold+" Hz\n" +
-                                           "Sebesség: " + speed + " m/s");
+                                           "Sebesség: " + speed + " km/h");
                         }
                     }
                 });
@@ -96,7 +116,7 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        requestWindowFeature(Window.FEATURE_NO_TITLE); // nem működik!
+        //requestWindowFeature(Window.FEATURE_NO_TITLE);
         //getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -105,7 +125,7 @@ public class MainActivity extends ActionBarActivity {
 
         tvText = (TextView) findViewById(R.id.tv);
 
-        btnStartStop = mEnum.Stop;
+        btnStartStop = mEnum.Start;
 
     }
 
@@ -161,13 +181,18 @@ public class MainActivity extends ActionBarActivity {
         Button mBtn = (Button) findViewById(R.id.startstopbtn);
         switch (btnStartStop) {
             case Start:
-                startRecordingThread();
+                //startRecordingThread();
+                measure=true;
                 mBtn.setText("Leállítás");
                 btnStartStop = mEnum.Stop;
                 break;
             case Stop:
-                stopRecording();
-                mBtn.setText("Felvétel");
+                //stopRecording();
+                measure=false;
+                Intent i = new Intent(MainActivity.this,ResultActivity.class);
+                i.putExtra("buffer",recordBuffer);
+                startActivity(i);
+                mBtn.setText("Mérés");
                 btnStartStop = mEnum.Start;
                 break;
         }

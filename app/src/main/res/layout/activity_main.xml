@@ -50,7 +50,7 @@
 
             android:onClick="buttonStartStop"
 
-            android:text="Leállítás"
+            android:text="Mérés"
             android:textColor="#FFFFFF"
             android:textSize="32sp"
 
