@@ -26,6 +26,7 @@ public class LineGraph {
     private XYSeriesRenderer renderer2 = new XYSeriesRenderer();
     private XYMultipleSeriesRenderer mRenderer = new XYMultipleSeriesRenderer();
 
+
     //private double min=0;
     //private double max=11025;
 
@@ -76,6 +77,27 @@ public class LineGraph {
     public void addNewPoints_line2(double x, double y)
     {
         dataset2.add(x, y);
+    }
+
+    public void setMin(double reference){
+        mRenderer.setXAxisMin(reference);
+    };
+
+    public void setMax(double reference){
+        mRenderer.setXAxisMax(reference);
+    };
+
+    public void setColor(boolean invert){
+        if(invert == true) {
+            renderer.setColor(Color.BLACK);
+            mRenderer.setBackgroundColor(Color.WHITE);
+            mRenderer.setMarginsColor(Color.WHITE);
+        }
+        else{
+            renderer.setColor(Color.WHITE);
+            mRenderer.setBackgroundColor(Color.BLACK);
+            mRenderer.setMarginsColor(Color.BLACK);
+        }
     }
 /*
     public void setMin(double reference){

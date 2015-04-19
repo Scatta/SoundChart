@@ -61,4 +61,17 @@ public class LineGraphForResult {
     public void setMax(double reference){
         mRenderer.setYAxisMax(reference);
     };
+
+    public void setColor(boolean invert){
+        if(invert == true) {
+            renderer.setColor(Color.BLACK);
+            mRenderer.setBackgroundColor(Color.WHITE);
+            mRenderer.setMarginsColor(Color.WHITE);
+        }
+        else{
+            renderer.setColor(Color.WHITE);
+            mRenderer.setBackgroundColor(Color.BLACK);
+            mRenderer.setMarginsColor(Color.BLACK);
+        }
+    }
 }
