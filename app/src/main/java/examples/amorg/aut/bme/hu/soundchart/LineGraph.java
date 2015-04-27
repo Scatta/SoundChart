@@ -12,24 +12,16 @@ import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
 
-/**
- * Created by SlimShady on 2015.03.28..
- */
 public class LineGraph {
     private GraphicalView view;
 
-    private TimeSeries dataset = new TimeSeries("Spectrum");
-    private TimeSeries dataset2 = new TimeSeries("Referece");
+    private TimeSeries dataset = new TimeSeries("Spektrum");
+    private TimeSeries dataset2 = new TimeSeries("Referencia");
     private XYMultipleSeriesDataset mDataset = new XYMultipleSeriesDataset();
 
     private XYSeriesRenderer renderer = new XYSeriesRenderer();
     private XYSeriesRenderer renderer2 = new XYSeriesRenderer();
     private XYMultipleSeriesRenderer mRenderer = new XYMultipleSeriesRenderer();
-
-
-    //private double min=0;
-    //private double max=11025;
-
 
     public LineGraph()
     {
@@ -46,18 +38,11 @@ public class LineGraph {
         mRenderer.setBackgroundColor(Color.BLACK);
         mRenderer.setMarginsColor(Color.BLACK);
 
-        mRenderer.setXTitle("Frequency [Hz]");
-        mRenderer.setYTitle("Magnitude");
+        mRenderer.setXTitle("Frekvencia [Hz]");
+        mRenderer.setYTitle("Amplitúdó");
 
         mRenderer.setLabelsTextSize(15);
         mRenderer.setXLabels(10);
-
-        //mRenderer.setZoomButtonsVisible(true);
-        //mRenderer.setZoomEnabled(true);
-        //mRenderer.setZoomRate(10);
-        //mRenderer.setPanEnabled(true,false);
-        //mRenderer.setXAxisMin(min);
-        //mRenderer.setXAxisMax(max);
 
         mRenderer.addSeriesRenderer(renderer);
         mRenderer.addSeriesRenderer(renderer2);
@@ -99,13 +84,4 @@ public class LineGraph {
             mRenderer.setMarginsColor(Color.BLACK);
         }
     }
-/*
-    public void setMin(double reference){
-        min = reference - 1000;
-    };
-
-    public void setMax(double reference){
-        max = reference + 1000;
-    };
-*/
 }

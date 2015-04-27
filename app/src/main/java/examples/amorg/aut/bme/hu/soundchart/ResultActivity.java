@@ -32,20 +32,20 @@ import java.text.DecimalFormat;
 public class ResultActivity extends ActionBarActivity {
 
     private double[] buffer;
-    private TextView tvResults;
     private TextView tvSpeed;
     private static GraphicalView view;
     private LinearLayout chartContainer;
-    private double range;
-    private double average;
     private double speed;
     private double fCome;
     private double fGo;
-    private double temp;
-    private int seged;
+    private int indexCome;
+    private int indexGo;
+    private int j;
+    private int fftSize;
     private boolean color;
     private int temperatue;
     private double soundSpeed;
+    private int start;
     private DrawerLayout drawerLayout;
     private ListView drawerList;
     private ActionBarDrawerToggle drawerToggle;
@@ -89,24 +89,23 @@ public class ResultActivity extends ActionBarActivity {
         soundSpeed = 344;
         temperatue = 20;
         color = false;
+        start = 0;
+
+        fGo = 0;
+        fCome = 0;
 
         Intent intent = getIntent();
         color = intent.getBooleanExtra("color",color);
         temperatue = intent.getIntExtra("temperature",temperatue);
         soundSpeed = intent.getDoubleExtra("soundSpeed",soundSpeed);
         buffer = intent.getDoubleArrayExtra("buffer");
+        start = intent.getIntExtra("start",start);
+        fftSize = intent.getIntExtra("fftSize",fftSize);
 
-        buffer = deleteZeros(buffer);
+        //buffer = deleteZeros(buffer);
 
-        tvResults = (TextView) findViewById(R.id.tvResult);
         tvSpeed = (TextView) findViewById(R.id.tvSpeed);
-
-        for(int i = 0; i < buffer.length; i++){
-            tvResults.append(""+buffer[i]+"\n");
-        }
-
-        tvResults.append("Méret: "+""+buffer.length);
-
+/*
         range = 300;
         if(buffer.length<10){
             Toast.makeText(this, "Túl kevés adat.", Toast.LENGTH_SHORT).show();
@@ -139,44 +138,62 @@ public class ResultActivity extends ActionBarActivity {
                 fGo=temp;
             }
         }
-
+*/
+        if(start != 0) {
+            j = start;
+            while (buffer[j - 1] > buffer[j]) {
+                j--;
+            }
+            indexCome = j;
+            fCome = j * 22050 / fftSize;
+            while (buffer[j - 1] < buffer[j]) {
+                j--;
+            }
+            while (buffer[j - 1] > buffer[j]) {
+                j--;
+            }
+            indexGo = j;
+            fGo = j * 22050 / fftSize;
+        }
+        else {
+            Toast.makeText(this, "Túl kevés adat.", Toast.LENGTH_LONG).show();
+        }
         speed = soundSpeed*((fCome-fGo)/(fCome+fGo));
 
         speed = speed * 3.6 ;
 
         speed = Math.round(speed*100.0)/100.0;
 
-        tvSpeed.setText("A jármű sebessége: "+""+Math.round(speed)+" km/h "+"("+""+speed+")");
+        tvSpeed.setText("Közeledő frekvencia: "+""+(int)fCome+"Hz\n"+"Távolodó frekvencia: "+""+(int)fGo+"Hz\n\n" +
+                "A jármű sebessége: "+""+Math.round(speed)+" km/h "+"("+""+speed+")");
 
         chartContainer = (LinearLayout) findViewById(R.id.chartResult);
 
         final LineGraphForResult line = new LineGraphForResult();
-        for (int i = 0; i < buffer.length; i++) {
-            line.addNewPoints(i , buffer[i]);
+        for (int i = 0; i < buffer.length / 2; i++) {
+            line.addNewPoints(i * 22050 / fftSize, buffer[i]);
         }
 
+        line.setFCome(fCome,buffer[indexCome]);
+        line.setFGo(fGo,buffer[indexGo]);
         view = line.getView(ResultActivity.this);
         line.setColor(color);
-        line.setMin(average-range);
-        line.setMax(average+range);
+        line.setMin(fGo-100);
+        line.setMax(fCome+100);
         chartContainer.removeAllViews();
         chartContainer.addView(view);
 
         if(color==false) {
             tvSpeed.setTextColor(Color.parseColor("#FFFFFF"));
             tvSpeed.setBackgroundColor(Color.parseColor("#000000"));
-            tvResults.setTextColor(Color.parseColor("#FFFFFF"));
-            tvResults.setBackgroundColor(Color.parseColor("#000000"));
         }
         else{
             tvSpeed.setTextColor(Color.parseColor("#000000"));
             tvSpeed.setBackgroundColor(Color.parseColor("#FFFFFF"));
-            tvResults.setTextColor(Color.parseColor("#000000"));
-            tvResults.setBackgroundColor(Color.parseColor("#FFFFFF"));
         }
 
     }
-
+/*
     private double[] deleteZeros(double[] data){
         int j = 0;
         for( int i=0;  i<data.length;  i++ )
@@ -204,7 +221,7 @@ public class ResultActivity extends ActionBarActivity {
         avg = avg / 10;
         return avg;
     }
-
+*/
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();

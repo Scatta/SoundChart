@@ -14,29 +14,45 @@
         android:paddingTop="15sp">
 
         <TextView
-            android:id="@+id/textTemp"
+            android:id="@+id/textZoomMin"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/temperature"
+            android:text="@string/zoomMin"
             android:textSize="15sp"
             android:textStyle="bold" />
 
         <EditText
-            android:id="@+id/editText"
+            android:id="@+id/editTextMin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ems="3"
+            android:ems="5"
             android:inputType="number"
-            android:text="@string/enter_text" />
+            android:text="" />
 
-        <TextView
-            android:id="@+id/textC"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/celsius"
-            android:textSize="15sp"
-            android:textStyle="bold" />
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="15sp">
+
+        <TextView
+            android:id="@+id/textZoomMax"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/zoomMax"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/editTextMax"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="5"
+            android:inputType="number"
+            android:text="" />
+
+    </LinearLayout>
 
 </LinearLayout>

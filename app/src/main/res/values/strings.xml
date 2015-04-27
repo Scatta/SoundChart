@@ -13,10 +13,8 @@
     <string-array name="options_array">
         <item>Hőmérséklet</item>
         <item>Szín: negatív</item>
+        <item>Közelítés</item>
         <item>Leírás</item>
-        <item>Zoom: Min</item>
-        <item>Zoom: Max</item>
-        <item>Zoom: Reset</item>
     </string-array>
 
     <string-array name="options_array_results">
@@ -34,34 +32,40 @@
     <string name="app_descrip">Hogyan használjuk?</string>
 
     <string name="app_credits1">
-        Ez az alkalmazás a készülék mellett elhaladó autó sebességének mérésére készült.
+         Ez az alkalmazás a készülék mellett elhaladó autó sebességének mérésére készült.
         Fontos, hogy az autó dudáljon közben, hogy – az autó szemszögéből – azonos frekvenciájú hang szóljon.
         Így Doppler-effektus segítségével mérhetünk sebességet.
     </string>
 
     <string name="app_credits2">
-        A kezdőképernyőn a mikrofon jele látható frekvenciatartományban. Itt megvizsgálhatjuk különböző hangok spektrumát
+         A kezdőképernyőn a mikrofon jele látható frekvenciatartományban. Itt megvizsgálhatjuk különböző hangok spektrumát
         (pl.: a fütty – mivel tiszta szinuszos hang – csak egy tüskét eredményez a spektrumon).
-        Rögzíthetünk egy konkrét spektrumot, hogy ehhez képest vizsgálhassuk az aktuális jelet.
-        A spektrum alatt látható az aktuális és a rögzített spektrum domináns frekvencia komponense.
-        Itt végezhetjük el a mérést, a „Mérés” gomb segítségével: megnyomásával rögzíti a domináns frekvencia komponenseket egy tömbben,
+        A „Csúcstartó” funkció segítségével rögzíthetjük a spektrum maximális értékeit:
+        ha érkezik egy nagyobb spektrumérték, akkor felülírja a maximumot.
+        A spektrum alatt látható az aktuális spektrum domináns frekvencia komponense.
+        Itt végezhetjük el a mérést, a „Mérés” gomb segítségével: megnyomásával rögzíti a maximális spektrumértékeket egy tömbben,
         majd átvált „Leállítás” funkcióra. \n\n
-        A mérés végeztével megjelennek az eredmények. Itt látható egy idő – frekvencia diagram,
-        amin megfigyelhetjük a frekvencia változását. A Doppler-effektus egy kis lépcsőt okoz a frekvenciamenetben,
-        aminek detektálásával következtethetünk a sebességre az alábbi képlet alapján:
+        A mérés végeztével megjelennek az eredmények. Itt látható egy spektrumszelet,
+        amin megfigyelhetjük a Doppler-effektus miatt létrejött frekvenciaeltolódás.
+        A megjelenő csúcsok detektálásával - közeledő és távolodó frekvenciakomponens -
+        következtethetünk a sebességre az alábbi képlet alapján:
     </string>
 
     <string name="app_credits3">
+        \r v: jármű sebessége[m/s]\n
+        \rfk: közeledő frekvencia[Hz]\n
+        \rft: távolodó frekvencia[Hz]\n
+        \rc: hangsebesség[m/s]\n\n
         A számoláshoz szükséges a hang sebességének ismerete:
     </string>
 
     <string name="app_credits4">
+        \r c: hangsebesség[m/s]\n
+        \rT: hőmérséklet[°C]\n\n
         Mivel számos készülék nem tud külső hőmérsékletet mérni, ezért a felhasználó állíthatja be.
-        A mért adatokat számszerűen is megvizsgálhatjuk egy görgethető nézetben.
     </string>
 
-    <string name="enter_text">20</string>
-    <string name="temperature">Hőmérséklet:</string>
-    <string name="celsius">°C</string>
+    <string name="zoomMin">Alsó határ:</string>
+    <string name="zoomMax">Felső határ:</string>
 
 </resources>

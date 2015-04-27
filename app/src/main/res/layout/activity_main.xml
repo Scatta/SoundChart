@@ -26,7 +26,8 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:background="#000000"
-                android:textColor="#FFFFFF" />
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"/>
         </LinearLayout>
 
         <LinearLayout
@@ -38,37 +39,31 @@
             android:textColor="#FFFFFF">
 
             <Button
-                android:id="@+id/startbtn"
-
+                android:id="@+id/freezebtn"
                 android:layout_width="160dp"
-
                 android:layout_height="wrap_content"
-                android:background="@drawable/buttonshape"
+                android:background="#000000"
                 android:onClick="buttonFreeze"
-
-                android:text="Rögzítés"
+                android:text="Csúcstartó"
                 android:textColor="#FFFFFF"
-                android:textSize="32sp" />
+                android:textSize="30sp" />
 
             <Button
                 android:id="@+id/startstopbtn"
-
                 android:layout_width="160dp"
-
                 android:layout_height="wrap_content"
-                android:background="@drawable/buttonshape_stop"
+                android:background="#000000"
                 android:onClick="buttonStartStop"
-
                 android:text="Mérés"
                 android:textColor="#FFFFFF"
-                android:textSize="32sp" />
+                android:textSize="30sp" />
         </LinearLayout>
 
     </LinearLayout>
 
     <ListView
         android:id="@+id/left_drawer"
-        android:layout_width="150dp"
+        android:layout_width="200dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:background="#111"

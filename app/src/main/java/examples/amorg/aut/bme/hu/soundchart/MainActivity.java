@@ -22,11 +22,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.achartengine.GraphicalView;
 
@@ -42,30 +40,33 @@ public class MainActivity extends ActionBarActivity {
     private static int channelConfiguration = 16;
     private static byte[] buffer;
     private static byte[] bufferHold;
+    private static byte[] bufferRecord;
+
     private LinearLayout chartContainer;
 
     private FFT fourier;
 
     private double[] spectrum;
     private double[] spectrumHold;
+    private int spectrumSize;
 
     private int minShow;
     private int maxShow;
 
     private double max;
-    private double maxHold;
-    private double speed;
     private double soundSpeed;
-    private int temperatue;
+    private int temperature;
 
-    private double[] recordBuffer;
+    private double[] recordSpectrum;
     private int counter;
     private boolean measure;
+    private int start;
+    private double temp;
 
     private TextView tvText;
 
-    enum mEnum {Start, Stop};
-    private mEnum btnStartStop;
+    private boolean btnStartStop;
+    private boolean btnFreeze;
 
     private DrawerLayout drawerLayout;
     private ListView drawerList;
@@ -75,19 +76,13 @@ public class MainActivity extends ActionBarActivity {
 
     private boolean color;
     private LinearLayout lLayout;
-    //private EditText editText;
+    private Button measureBtn;
+    private Button freezeBtn;
 
 
     private class RecordThread extends Thread {
         public void run() {
             startRecording();
-            fourier = new FFT();
-            bufferHold = null;
-            spectrumHold = null;
-            recordBuffer = new double[512];
-            counter = 0;
-            measure = false;
-
 
             while (readEnabled) {
 
@@ -99,28 +94,42 @@ public class MainActivity extends ActionBarActivity {
                 spectrum = fourier.doFFT(buffer);
 
                 final LineGraph line = new LineGraph();
-                for (int i = 0; i < spectrum.length / 2; i++) {
-                    line.addNewPoints((i * 22050 / fourier.getFftSize()), spectrum[i]);  //Math.log10(spectrum[i]/1000)
-                }
-
 
                 if (spectrumHold != null) {
-                    for (int i = 0; i < spectrumHold.length / 2; i++) {
+                    for (int i = 0; i < spectrumSize / 2; i++) {
+                        if(spectrumHold != null) {
+                            line.addNewPoints_line2((i * 22050 / fourier.getFftSize()), spectrumHold[i]);
+                        }
+                    }
+                }
+
+                for (int i = 0; i < spectrum.length / 2; i++) {
+                    line.addNewPoints((i * 22050 / fourier.getFftSize()), spectrum[i]);
+                    if (spectrumHold != null && spectrum[i] > spectrumHold[i]) {
+                        spectrumHold[i] = spectrum[i];
                         line.addNewPoints_line2((i * 22050 / fourier.getFftSize()), spectrumHold[i]);
+                    } else if (recordSpectrum != null && spectrum[i] > recordSpectrum[i]) {
+                        recordSpectrum[i] = spectrum[i];
                     }
                 }
 
                 if (measure) {
-                    recordBuffer[counter] = fourier.findMax(spectrum) * 22050 / fourier.getFftSize();
-                    if (counter != 511) {
+                    if (temp == 0) {
+                        temp = fourier.findMax(spectrum);
+                        counter = 1;
+                    } else if (counter < 3 && temp == fourier.findMax(spectrum)) {
                         counter++;
+                    } else if (counter == 3) {
+                        start = (int) temp;
+                    } else {
+                        temp = fourier.findMax(spectrum);
+                        counter = 1;
                     }
                 }
 
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        //Toast.makeText(MainActivity.this, "test...", Toast.LENGTH_SHORT).show();
                         view = line.getView(MainActivity.this);
                         line.setColor(color);
                         line.setMin(minShow);
@@ -128,21 +137,9 @@ public class MainActivity extends ActionBarActivity {
                         chartContainer.removeAllViews();
                         chartContainer.addView(view);
                         max = fourier.findMax(spectrum) * 22050 / fourier.getFftSize();
-                        tvText.setText("Domináns frekvencia: " + "" + max + " Hz\n" +
-                                "Referencia frekvencia: 0.0 Hz\n" +
-                                "Sebesség: 0 km/h");
-                        if (spectrumHold != null) {
-                            maxHold = fourier.findMax(spectrumHold) * 22050 / fourier.getFftSize();
-                            speed = soundSpeed * ((max / maxHold) - 1);
-                            speed = speed * 3.6;
-                            speed = Math.round(speed * 100.0) / 100.0;
-                            tvText.setText("Domináns frekvencia: " + "" + max + " Hz\n" +
-                                    "Referencia frekvencia: " + "" + maxHold + " Hz\n" +
-                                    "Sebesség: " + speed + " km/h");
-                        }
+                        tvText.setText("Domináns frekvencia: " + "" + Math.round(max * 100.0) / 100.0 + " Hz\n");
                     }
                 });
-
             }
         }
     }
@@ -154,7 +151,7 @@ public class MainActivity extends ActionBarActivity {
 
         getSupportActionBar().setTitle("Spektrum");
 
-        temperatue = 20;
+        temperature = 20;
 
         optionTitles = getResources().getStringArray(R.array.options_array);
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -179,11 +176,9 @@ public class MainActivity extends ActionBarActivity {
             }
 
             public void onDrawerOpened(View drawerView) {
-                optionTitles[0] = "Hőmérséklet: "+""+temperatue+"°C"; // ??
                 invalidateOptionsMenu();
             }
         };
-
 
         drawerLayout.setDrawerListener(drawerToggle);
 
@@ -191,13 +186,57 @@ public class MainActivity extends ActionBarActivity {
 
         tvText = (TextView) findViewById(R.id.tv);
         lLayout = (LinearLayout) findViewById(R.id.buttons);
+        measureBtn = (Button) findViewById(R.id.startstopbtn);
+        freezeBtn = (Button) findViewById(R.id.freezebtn);
 
-        btnStartStop = mEnum.Start;
+        btnStartStop = true;
+        btnFreeze = true;
         color = false;
-        soundSpeed = 331.5 + 0.6*temperatue;
+        soundSpeed = 331.5 + 0.6 * temperature;
         minShow = 0;
         maxShow = 11025;
+        fourier = new FFT();
+        bufferHold = null;
+        spectrumHold = null;
+        recordSpectrum = null;
+        counter = 0;
+        measure = false;
+        start = 0;
+        temp = 0;
+    }
 
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState.putDoubleArray("spectrumHold", spectrumHold);
+        savedInstanceState.putDoubleArray("recordSpectrum", recordSpectrum);
+        savedInstanceState.putInt("minShow", minShow);
+        savedInstanceState.putInt("maxShow", maxShow);
+        savedInstanceState.putBoolean("color", color);
+        savedInstanceState.putInt("temperature", temperature);
+        savedInstanceState.putDouble("soundSpeed", soundSpeed);
+        savedInstanceState.putInt("counter", counter);
+        savedInstanceState.putInt("start", start);
+        savedInstanceState.putDouble("temp", temp);
+        savedInstanceState.putBoolean("measure", btnStartStop);
+        savedInstanceState.putBoolean("freeze", btnFreeze);
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        spectrumHold = savedInstanceState.getDoubleArray("spectrumHold");
+        recordSpectrum = savedInstanceState.getDoubleArray("recordSpectrum");
+        minShow = savedInstanceState.getInt("minShow");
+        maxShow = savedInstanceState.getInt("maxShow");
+        color = savedInstanceState.getBoolean("color");
+        temperature = savedInstanceState.getInt("temperature");
+        soundSpeed = savedInstanceState.getDouble("soundSpeed");
+        counter = savedInstanceState.getInt("counter");
+        start = savedInstanceState.getInt("start");
+        temp = savedInstanceState.getDouble("temp");
+        btnStartStop = savedInstanceState.getBoolean("measure");
+        btnFreeze = savedInstanceState.getBoolean("freeze");
     }
 
     private void startRecording() {
@@ -250,33 +289,43 @@ public class MainActivity extends ActionBarActivity {
 
     public void buttonStartStop(View viewButton) {
         Button mBtn = (Button) findViewById(R.id.startstopbtn);
-        switch (btnStartStop) {
-            case Start:
-                //startRecordingThread();
-                measure = true;
-                mBtn.setText("Leállítás");
-                btnStartStop = mEnum.Stop;
-                break;
-            case Stop:
-                //stopRecording();
-                measure = false;
-                Intent i = new Intent(MainActivity.this, ResultActivity.class);
-                i.putExtra("buffer", recordBuffer);
-                i.putExtra("soundSpeed", soundSpeed);
-                i.putExtra("temperature",temperatue);
-                i.putExtra("color",color);
-                startActivity(i);
-                mBtn.setText("Mérés");
-                btnStartStop = mEnum.Start;
-                break;
+        if (btnStartStop) {
+            bufferRecord = new byte[buffer.length];
+            bufferRecord = buffer;
+            recordSpectrum = fourier.doFFT(bufferRecord);
+            measure = true;
+            mBtn.setText("Leállítás");
+            btnStartStop = false;
+        } else {
+            measure = false;
+            Intent i = new Intent(MainActivity.this, ResultActivity.class);
+            i.putExtra("buffer", recordSpectrum);
+            i.putExtra("start", start);
+            i.putExtra("fftSize", fourier.getFftSize());
+            i.putExtra("soundSpeed", soundSpeed);
+            i.putExtra("temperature", temperature);
+            i.putExtra("color", color);
+            startActivity(i);
+            mBtn.setText("Mérés");
+            btnStartStop = true;
         }
     }
 
     public void buttonFreeze(View viewFreeze) {
-        bufferHold = new byte[buffer.length];
-        bufferHold = buffer;
-        spectrumHold = fourier.doFFT(bufferHold);
-
+        Button freezeBtn = (Button) findViewById(R.id.freezebtn);
+        if (btnFreeze) {
+            bufferHold = new byte[buffer.length];
+            bufferHold = buffer;
+            spectrumHold = fourier.doFFT(bufferHold);
+            spectrumSize = spectrumHold.length;
+            freezeBtn.setText("Leállítás");
+            btnFreeze = false;
+        } else {
+            spectrumHold = null;
+            spectrumSize = 0;
+            freezeBtn.setText("Csúcstartó");
+            btnFreeze = true;
+        }
     }
 
 
@@ -287,10 +336,8 @@ public class MainActivity extends ActionBarActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-    /* Called whenever we call invalidateOptionsMenu() */
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        // If the nav drawer is open, hide action items related to the content view
         boolean drawerOpen = drawerLayout.isDrawerOpen(drawerList);
         menu.findItem(R.id.action_about).setVisible(!drawerOpen);
         return super.onPrepareOptionsMenu(menu);
@@ -301,7 +348,6 @@ public class MainActivity extends ActionBarActivity {
         if (drawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
-        // Handle action buttons
         switch (item.getItemId()) {
             case R.id.action_about:
                 LayoutInflater inflater = this.getLayoutInflater();
@@ -319,7 +365,6 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
-    /* The click listner for ListView in the navigation drawer */
     private class DrawerItemClickListener implements ListView.OnItemClickListener {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -328,27 +373,22 @@ public class MainActivity extends ActionBarActivity {
     }
 
     private void selectItem(int position) {
-        switch(position){
+        switch (position) {
             case 0:
-                //View optionsView = getLayoutInflater().inflate(R.layout.options, null, false);
-
-                //editText = (EditText) findViewById(R.id.editText);
-
-
                 final AlertDialog.Builder optionsBuilder = new AlertDialog.Builder(this);
                 final EditText input = new EditText(this);
                 input.setInputType(InputType.TYPE_CLASS_NUMBER);
-                optionsBuilder.setTitle("Hőmérséklet[°C]");
+                optionsBuilder.setTitle("Hőmérséklet: " + "" + temperature + "°C");
                 optionsBuilder.setView(input);
                 optionsBuilder.setPositiveButton("Rendben", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         try {
-                            temperatue = Integer.parseInt(input.getText().toString().trim());
-                        } catch (Exception e){
+                            temperature = Integer.parseInt(input.getText().toString().trim());
+                        } catch (Exception e) {
                             dialog.cancel();
                         }
-                        soundSpeed = 331.5 + 0.6 * temperatue;
+                        soundSpeed = 331.5 + 0.6 * temperature;
                     }
                 });
                 optionsBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -361,43 +401,65 @@ public class MainActivity extends ActionBarActivity {
 
                 break;
             case 1:
-                if(color) {
+                if (color) {
                     optionTitles[position] = "Szín: negatív";
                     tvText.setTextColor(Color.parseColor("#FFFFFF"));
                     tvText.setBackgroundColor(Color.parseColor("#000000"));
                     lLayout.setBackgroundColor(Color.parseColor("#000000"));
+                    measureBtn.setBackgroundColor(Color.parseColor("#000000"));
+                    measureBtn.setTextColor(Color.parseColor("#FFFFFF"));
+                    freezeBtn.setBackgroundColor(Color.parseColor("#000000"));
+                    freezeBtn.setTextColor(Color.parseColor("#FFFFFF"));
                     color = false;
-                }
-                else{
+                } else {
                     optionTitles[position] = "Szín: pozitív";
                     tvText.setTextColor(Color.parseColor("#000000"));
                     tvText.setBackgroundColor(Color.parseColor("#FFFFFF"));
                     lLayout.setBackgroundColor(Color.parseColor("#FFFFFF"));
+                    measureBtn.setBackgroundColor(Color.parseColor("#FFFFFF"));
+                    measureBtn.setTextColor(Color.parseColor("#000000"));
+                    freezeBtn.setBackgroundColor(Color.parseColor("#FFFFFF"));
+                    freezeBtn.setTextColor(Color.parseColor("#000000"));
                     color = true;
                 }
                 break;
             case 2:
-                View messageView = getLayoutInflater().inflate(R.layout.howtouse, null, false);
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setIcon(R.drawable.ic_launcher);
-                builder.setTitle(R.string.app_name);
-                builder.setView(messageView);
-                builder.setNeutralButton("Vissza", null);
-                builder.show();
-                break;
-            case 3:
                 final AlertDialog.Builder zoomMinBuilder = new AlertDialog.Builder(this);
-                final EditText inputMin = new EditText(this);
-                inputMin.setInputType(InputType.TYPE_CLASS_NUMBER);
-                zoomMinBuilder.setTitle("Zoom: Min[Hz]");
-                zoomMinBuilder.setView(inputMin);
+                LayoutInflater inflater = MainActivity.this.getLayoutInflater();
+                View layout = inflater.inflate(R.layout.options, null);
+                zoomMinBuilder.setView(layout);
+                final EditText inputMin = (EditText) layout.findViewById(R.id.editTextMin);
+                final EditText inputMax = (EditText) layout.findViewById(R.id.editTextMax);
+                inputMin.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        inputMin.setText("");
+                    }
+                });
+                inputMax.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        inputMax.setText("");
+                    }
+                });
+                zoomMinBuilder.setTitle("Közelítés[Hz]");
+                inputMin.setText("" + minShow);
+                inputMax.setText("" + maxShow);
                 zoomMinBuilder.setPositiveButton("Rendben", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         try {
-                            minShow = Integer.parseInt(inputMin.getText().toString().trim());
-                        } catch (Exception e){
+                            if (Integer.parseInt(inputMin.getText().toString().trim()) < Integer.parseInt(inputMax.getText().toString().trim())) {
+                                minShow = Integer.parseInt(inputMin.getText().toString().trim());
+                                maxShow = Integer.parseInt(inputMax.getText().toString().trim());
+                            } else if (inputMin.getText().toString().trim().length() > 0 && Integer.parseInt(inputMin.getText().toString().trim()) < maxShow) {
+                                minShow = Integer.parseInt(inputMin.getText().toString().trim());
+                            } else if (inputMax.getText().toString().trim().length() > 0 && Integer.parseInt(inputMax.getText().toString().trim()) > minShow) {
+                                maxShow = Integer.parseInt(inputMax.getText().toString().trim());
+                            } else {
+                                dialog.cancel();
+                            }
+                        } catch (Exception e) {
                             dialog.cancel();
                         }
                     }
@@ -407,38 +469,25 @@ public class MainActivity extends ActionBarActivity {
                         dialog.cancel();
                     }
                 });
+                zoomMinBuilder.setNeutralButton("Visszaállítás", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        minShow = 0;
+                        maxShow = 11025;
+                    }
+                });
                 zoomMinBuilder.show();
                 break;
-            case 4:
-                final AlertDialog.Builder zoomMaxBuilder = new AlertDialog.Builder(this);
-                final EditText inputMax = new EditText(this);
-                inputMax.setInputType(InputType.TYPE_CLASS_NUMBER);
-                zoomMaxBuilder.setTitle("Zoom: Max[Hz]");
-                zoomMaxBuilder.setView(inputMax);
-                zoomMaxBuilder.setPositiveButton("Rendben", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        try {
-                            maxShow = Integer.parseInt(inputMax.getText().toString().trim());
-                        } catch (Exception e){
-                            dialog.cancel();
-                        }
-                    }
-                });
-                zoomMaxBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        dialog.cancel();
-                    }
-                });
-                zoomMaxBuilder.show();
-                break;
-            case 5:
-                minShow = 0;
-                maxShow = 11025;
+            case 3:
+                View messageView = getLayoutInflater().inflate(R.layout.howtouse, null, false);
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setIcon(R.drawable.ic_launcher);
+                builder.setTitle(R.string.app_name);
+                builder.setView(messageView);
+                builder.setNeutralButton("Vissza", null);
+                builder.show();
                 break;
         }
 
-        // update selected item and title, then close the drawer
         drawerList.setItemChecked(position, true);
         drawerLayout.closeDrawer(drawerList);
     }
@@ -446,14 +495,12 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        // Sync the toggle state after onRestoreInstanceState has occurred.
         drawerToggle.syncState();
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        // Pass any configuration change to the drawer toggls
         drawerToggle.onConfigurationChanged(newConfig);
     }
 
